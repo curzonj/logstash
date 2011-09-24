@@ -8,6 +8,7 @@ GEM
     filewatch (0.3.0)
     gelf (1.1.3)
       json
+    gelfd (0.1.0)
     gmetric (0.1.3)
     haml (3.1.2)
     jls-grok (0.9.0)
@@ -41,6 +42,7 @@ DEPENDENCIES
   bunny
   filewatch (~> 0.3.0)
   gelf
+  gelfd (~> 0.1.0)
   gmetric (~> 0.1.3)
   haml
   jls-grok (= 0.9.0)
