@@ -22,7 +22,7 @@ class LogStash::Runner
 
     if RUBY_VERSION != "1.9.2"
       $stderr.puts "Ruby 1.9.2 mode is required."
-      $stderr.puts "Options for fixin this: "
+      $stderr.puts "Options for fixing this: "
       $stderr.puts "  * If doing 'ruby bin/logstash ...' add --1.9 flag to 'ruby'"
       $stderr.puts "  * If doing 'java -jar ... ' add -Djruby.compat.version=RUBY1_9 to java flags"
       return 1
@@ -40,12 +40,19 @@ class LogStash::Runner
     @runners.each { |r| status << r.wait }
 
     # Avoid running test/unit's at_exit crap
-    exit(status.first)
+    if status.empty?
+      exit(0)
+    else
+      exit(status.first)
+    end
   end # def self.main
 
   def run(args)
     command = args.shift
     commands = {
+      "-v" => lambda { emit_version(args) },
+      "-V" => lambda { emit_version(args) },
+      "--version" => lambda { emit_version(args) },
       "agent" => lambda do
         require "logstash/agent"
         agent = LogStash::Agent.new
@@ -87,6 +94,14 @@ class LogStash::Runner
 
     return args
   end # def run
+
+  def emit_version
+    require "logstash/version"
+    puts "logstash #{LOGSTASH_VERSION}"
+
+    # '-v' can be the only argument, end processing args now.
+    return []
+  end # def emit_version
 end # class LogStash::Runner
 
 if $0 == __FILE__

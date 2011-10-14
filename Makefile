@@ -1,11 +1,16 @@
+# Requirements to build:
+#   ant
+#   cpio
+#   wget
+#
 JRUBY_VERSION=1.6.4
 JRUBY_CMD=build/jruby/jruby-$(JRUBY_VERSION)/bin/jruby
-WITH_JRUBY=$(JRUBY_CMD) --1.9 -S
-VERSION=$(shell ruby -r./VERSION -e 'puts LOGSTASH_VERSION')
+WITH_JRUBY=bash $(JRUBY_CMD) --1.9 -S
+VERSION=$(shell ruby -r./lib/logstash/version -e 'puts LOGSTASH_VERSION')
 JRUBY_URL=http://repository.codehaus.org/org/jruby/jruby-complete/$(JRUBY_VERSION)
 JRUBY=vendor/jar/jruby-complete-$(JRUBY_VERSION).jar
 JRUBYC=java -Djruby.compat.version=RUBY1_9 -jar $(PWD)/$(JRUBY) -S jrubyc
-ELASTICSEARCH_VERSION=0.17.6
+ELASTICSEARCH_VERSION=0.17.7
 ELASTICSEARCH_URL=http://github.com/downloads/elasticsearch/elasticsearch
 ELASTICSEARCH=vendor/jar/elasticsearch-$(ELASTICSEARCH_VERSION)
 PLUGIN_FILES=$(shell git ls-files | egrep '^lib/logstash/(inputs|outputs|filters)/' | egrep -v '/base.rb$$')
@@ -41,7 +46,7 @@ compile: compile-grammar compile-runner | build/ruby
 .PHONY: compile-runner
 compile-runner: build/ruby/logstash/runner.class
 build/ruby/logstash/runner.class: lib/logstash/runner.rb | build/ruby $(JRUBY)
-	$(QUIET)(cd lib; JRUBY_OPTS=--1.9 $(JRUBYC) -t ../build/ruby logstash/runner.rb) 
+	$(QUIET)(cd lib; JRUBY_OPTS=--1.9 $(JRUBYC) -t ../build/ruby logstash/runner.rb)
 
 # TODO(sissel): Stop using cpio for this
 .PHONY: copy-ruby-files
@@ -52,7 +57,7 @@ copy-ruby-files: | build/ruby
 	$(QUIET)git ls-files | grep '^test/.*\.rb$$' | sed -e 's,^test/,,' \
 	| (cd test; cpio -p --make-directories ../build/ruby)
 
-vendor: 
+vendor:
 	$(QUIET)mkdir $@
 
 vendor/jar: | vendor
@@ -112,7 +117,7 @@ vendor/bundle: | $(GEM_HOME)/bin/bundle fix-bundler
 
 gem: logstash-$(VERSION).gem
 
-logstash-$(VERSION).gem: compile 
+logstash-$(VERSION).gem: compile
 	$(QUIET)$(WITH_JRUBY) gem build logstash.gemspec
 
 build:
@@ -157,8 +162,8 @@ build/logstash-$(VERSION)-monolithic.jar:
 	$(QUIET)jar i $@
 
 .PHONY: test
-test: 
-	$(QUIET)$(JRUBY_CMD) bin/logstash test
+test:
+	$(QUIET)bash $(JRUBY_CMD) bin/logstash test
 
 .PHONY: docs
 docs: docgen doccopy docindex
@@ -182,13 +187,14 @@ build/docs/filters/%.html: lib/logstash/filters/%.rb | build/docs/filters
 build/docs/outputs/%.html: lib/logstash/outputs/%.rb | build/docs/outputs
 	$(QUIET)ruby docs/docgen.rb -o build/docs $<
 
-build/docs/%: docs/%
+build/docs/%: docs/% lib/logstash/version.rb
+	@echo "Copying $< (to $@)"
 	-$(QUIET)mkdir -p $(shell dirname $@)
 	$(QUIET)sed -re 's/%VERSION%/$(VERSION)/g' $< > $@
 
 build/docs/index.html: $(addprefix build/docs/,$(subst lib/logstash/,,$(subst .rb,.html,$(PLUGIN_FILES))))
-build/docs/index.html: docs/generate_index.rb
-	$(JRUBY_CMD) $< build/docs > $@
+build/docs/index.html: docs/generate_index.rb lib/logstash/version.rb
+	ruby $< build/docs > $@
 
 publish: | gem
 	$(QUIET)$(WITH_JRUBY) gem push logstash-$(VERSION).gem
