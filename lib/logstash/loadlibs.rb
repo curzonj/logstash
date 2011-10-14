@@ -1,4 +1,4 @@
-jarpath = File.join(File.dirname(__FILE__), "../../vendor/**/*.jar")
+jarpath = File.join(File.dirname(__FILE__), "../../vendor/jar/**/*.jar")
 Dir[jarpath].each do |jar|
   if $DEBUG
     puts "Loading #{jar}"

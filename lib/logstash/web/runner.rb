@@ -7,14 +7,7 @@ class LogStash::Web::Runner
 
   public
   def run(args)
-    jarpath = File.join(File.dirname(__FILE__), "..", "..", "..", "vendor", 
-                        "**", "*.jar")
-    #p :jarpath => jarpath
-    Dir[jarpath].each do |jar|
-      #p :jar => jar
-      require jar
-    end
-
+    require 'logstash/loadlibs'
     require "logstash/web/server"
 
     settings = Settings.new
