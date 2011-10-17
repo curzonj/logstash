@@ -100,7 +100,7 @@ class LogStash::Inputs::Gelf < LogStash::Inputs::Base
 
   private
   def remap_gelf(event)
-    event.message = event.fields["full_message"]
+    event.message = event.fields["full_message"] || event.fields["short_message"]
     event.timestamp = LogStash::Time.to_iso8601(
       DateTime.strptime(event.fields["timestamp"].to_s, "%s.%L" ))
     event.source = "gelf://#{event.fields["host"]}#{event.fields["file"]}"
